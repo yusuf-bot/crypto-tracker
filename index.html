@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Crypto Tracker</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+  </style>
+</head>
+<body>
+  <h1>Client Crypto Tracker</h1>
+  <table id="cryptoTable">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Token</th>
+        <th>Current Price (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dynamic content will be injected here -->
+    </tbody>
+  </table>
+
+  <div>
+    <h2>Manage Clients</h2>
+    <!-- Add Client Form -->
+    <form id="addClientForm">
+      <label for="clientName">Client Name:</label>
+      <input type="text" id="clientName" required />
+      
+      <label for="clientTokens">Tokens (comma-separated):</label>
+      <input type="text" id="clientTokens" required />
+      
+      <button type="submit">Add Client</button>
+    </form>
+    
+    <!-- Remove Client Form -->
+    <form id="removeClientForm">
+      <label for="removeClientName">Client Name:</label>
+      <input type="text" id="removeClientName" required />
+      
+      <button type="submit">Remove Client</button>
+    </form>
+  </div>
+
+  <script>
+    const apiBaseUrl = "https://api.coingecko.com/api/v3/simple/price";
+    const dbUrl = "/clients"; // Path to the JSON file
+  
+    async function fetchCryptoPrice(token) {
+      const url = `${apiBaseUrl}?ids=${token}&vs_currencies=usd`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data[token] ? data[token].usd : "N/A";
+      } catch (error) {
+        console.error(`Error fetching price for ${token}:`, error);
+        return "Error";
+      }
+    }
+  
+    async function loadClients() {
+      try {
+        const response = await fetch(dbUrl);
+        const clients = await response.json();
+        const tableBody = document.querySelector("#cryptoTable tbody");
+  
+        // Clear table before adding rows
+        tableBody.innerHTML = "";
+  
+        // Fetch and render client data
+        for (const client of clients) {
+          for (const token of client.tokens) {
+            const price = await fetchCryptoPrice(token);
+  
+            // Create a new row
+            const row = document.createElement("tr");
+  
+            row.innerHTML = `
+              <td>${client.client}</td>
+              <td>${token}</td>
+              <td>${typeof price === "number" ? `$${price.toFixed(8)}` : price}</td>
+            `;
+  
+            tableBody.appendChild(row);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading clients:", error);
+      }
+    }
+  
+    // Load clients initially
+    loadClients();
+  
+    // Set interval to update prices every 1 minute
+    const priceUpdateInterval = setInterval(loadClients, 60000);
+  
+    // Add a client to the database
+    async function addClient(clientName, tokens) {
+      try {
+        const response = await fetch(dbUrl);
+        const clients = await response.json();
+  
+        // Check if the client already exists
+        if (clients.some(client => client.client === clientName)) {
+          alert("Client already exists!");
+          return;
+        }
+  
+        // Add the new client
+        clients.push({ client: clientName, tokens });
+  
+        // Save the updated clients to the JSON file
+        await saveClientsToDB(clients);
+        alert("Client added successfully!");
+  
+        // Load clients to update the prices immediately
+        loadClients();
+  
+        // Clear input fields
+        document.getElementById("clientName").value = "";
+        document.getElementById("clientTokens").value = "";
+      } catch (error) {
+        console.error("Error adding client:", error);
+      }
+    }
+  
+    // Remove a client from the database
+    async function removeClient(clientName) {
+      try {
+        const response = await fetch(dbUrl);
+        const clients = await response.json();
+  
+        // Filter out the client to be removed
+        const updatedClients = clients.filter(client => client.client !== clientName);
+  
+        // Save the updated clients to the JSON file
+        await saveClientsToDB(updatedClients);
+        alert("Client removed successfully!");
+  
+        // Load clients to update the prices immediately
+        loadClients();
+      } catch (error) {
+        console.error("Error removing client:", error);
+      }
+    }
+  
+    // Save updated clients to the JSON file
+    async function saveClientsToDB(updatedClients) {
+      await fetch(dbUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(updatedClients)
+      });
+    }
+  
+    // Event listeners for the forms
+    document.getElementById("addClientForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const clientName = document.getElementById("clientName").value.trim();
+      const tokens = document.getElementById("clientTokens").value.trim().split(",");
+      addClient(clientName, tokens);
+    });
+  
+    document.getElementById("removeClientForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const clientName = document.getElementById("removeClientName").value.trim();
+      removeClient(clientName);
+    });
+  </script>
+</body>
+</html>
