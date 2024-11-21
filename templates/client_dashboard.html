@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Dashboard</title>
+</head>
+<body>
+    <h1>Your Investments</h1>
+    <table border="1">
+        <tr>
+            <th>Token</th>
+            <th>Tokens Held</th>
+            <th>Invested AED</th>
+            <th>Invested USD</th>
+            <th>Price Prediction</th>
+        </tr>
+        {% for investment in investments %}
+        <tr>
+            <td>{{ investment.token }}</td>
+            <td>{{ investment.tokens_held }}</td>
+            <td>{{ investment.invested_aed }}</td>
+            <td>{{ investment.invested_usd }}</td>
+            <td>{{ investment.price_prediction }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
