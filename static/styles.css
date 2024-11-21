@@ -1,0 +1,155 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #4285F4;
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-top: 20px;
+}
+
+.btn:hover {
+    background: #357ae8;
+}
+
+h2 {
+    margin-top: 20px;
+    color: #333;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #4285F4;
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-top: 20px;
+}
+
+.btn:hover {
+    background: #357ae8;
+}
+
+/* Login Styles */
+.login-container {
+    text-align: center;
+}
+
+.login-message {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+/* Client Dashboard Styles */
+.client-dashboard {
+    margin-top: 20px;
+}
+
+.client-dashboard h2 {
+    margin-top: 20px;
+    color: #333;
+}
+
+.client-dashboard ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.client-dashboard li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Admin Dashboard Styles */
+.admin-dashboard {
+    margin-top: 20px;
+}
+
+.admin-dashboard h2 {
+    margin-top: 20px;
+    color: #333;
+}
+
+.admin-dashboard table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.admin-dashboard th, .admin-dashboard td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.admin-dashboard th {
+    background-color: #4285F4;
+    color: white;
+}
+
+.admin-dashboard tr:hover {
+    background-color: #f1f1f1;
+}
+
+.admin-dashboard .btn {
+    width: auto;
+    margin: 10px 0;
+}

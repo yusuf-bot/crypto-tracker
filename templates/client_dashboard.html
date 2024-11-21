@@ -1,28 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
+        table { margin: 20px auto; width: 50%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; }
+        th { background: #007BFF; color: white; }
+    </style>
 </head>
 <body>
-    <h1>Your Investments</h1>
-    <table border="1">
+    <h1>Welcome, {{ client.name }}</h1>
+    <table>
         <tr>
             <th>Token</th>
             <th>Tokens Held</th>
-            <th>Invested AED</th>
-            <th>Invested USD</th>
-            <th>Price Prediction</th>
+            <th>Invested Amount (AED)</th>
+            <th>Converted Amount (USD)</th>
+            <th>Current Holdings</th>
         </tr>
-        {% for investment in investments %}
         <tr>
-            <td>{{ investment.token }}</td>
-            <td>{{ investment.tokens_held }}</td>
-            <td>{{ investment.invested_aed }}</td>
-            <td>{{ investment.invested_usd }}</td>
-            <td>{{ investment.price_prediction }}</td>
+            <td>{{ client.token_name }}</td>
+            <td>{{ client.tokens_held }}</td>
+            <td>{{ client.amount_invested_aed }}</td>
+            <td>{{ client.converted_to_usd }}</td>
+            <td>{{ client.current_holdings }}</td>
         </tr>
-        {% endfor %}
     </table>
-    <a href="{{ url_for('logout') }}">Logout</a>
 </body>
 </html>
