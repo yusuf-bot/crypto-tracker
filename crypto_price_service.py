@@ -47,7 +47,8 @@ class CryptoPriceService:
             data = response.json()
 
             # Extract the price
-            return data.get(token_id, {}).get("usd", 0.0)
+            price=data.get(token_id, {}).get("usd", 0.0)
+            return float(price) 
         except Exception as e:
             print(f"Error retrieving price for {token_name}: {str(e)}")
             return 0.0
