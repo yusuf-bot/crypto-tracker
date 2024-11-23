@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import os
-
+import sys
 from pip._vendor import cachecontrol
 
 import requests
@@ -38,13 +38,22 @@ def update_prices(current_prices):
     return current_prices  # Debugging
 
 # Schedule the price update every 2 minutes
-os.makedirs('instance', exist_ok=True)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Ensure the instance directory exists
+INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
+os.makedirs(INSTANCE_DIR, exist_ok=True)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'+ os.path.abspath('instance/users.db')
+import secrets  # Use this for secure secret key generation
+
+# Set secret key
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+# Configure SQLAlchemy database URI
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(INSTANCE_DIR, 'users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 
 
 
@@ -428,10 +437,16 @@ def logout():
 
 
 # In your app.py, before running the app
-with app.app_context():
-    db.drop_all()  # Drops all existing tables
-    db.create_all()  # Recreates tables with new schema
-
+def init_db():
+    with app.app_context():
+        try:
+            # Create tables only if they don't exist
+            db.create_all()
+            print("Database initialized successfully.")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+            sys.exit(1)
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True)

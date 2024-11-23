@@ -2,15 +2,14 @@
 # exit on error
 set -o errexit
 
+# Create instance directory
+mkdir -p instance
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Create database directory if it doesn't exist
-mkdir -p instance
-
-# Run any database initialization or migration scripts
+# Run database initialization
 python3 -c "
-from app import app, db
-with app.app_context():
-    db.create_all()
+from app import init_db
+init_db()
 "
