@@ -12,7 +12,6 @@ from flask import jsonify  # Add this import for the jsonify function
 import time
 from oauthlib.oauth2 import OAuth2Error  # Add this import for OAuth2 error handling  # Import the scraping function
 from crypto_price_service import price_service 
-from token_price_cache import price_cache  # Import our price cache
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
