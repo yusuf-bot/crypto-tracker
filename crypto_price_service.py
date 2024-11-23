@@ -1,5 +1,5 @@
 import requests
-import random
+
 
 class CryptoPriceService:
     def __init__(self):
@@ -21,12 +21,18 @@ class CryptoPriceService:
             float: Current price of the token or 0.0 if not found.
         """
 
-        UserAgents=['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36']
-
+        headers = {
+            'Accept': 'text/html, image/avif, image/webp, image/apng, image/svg+xml, */*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US, en;q=0.9',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Site': 'none',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+        }
         token_id = self.token_map.get(token_name)
         if not token_id:
             print(f"Token {token_name} not found in token map.")
@@ -34,7 +40,7 @@ class CryptoPriceService:
 
         try:
            
-            response = requests.get("https://api.coingecko.com/api/v3/simple/price",headers={'User-Agent':  random.choice(UserAgents)},
+            response = requests.get("https://api.coingecko.com/api/v3/simple/price",headers={headers},
                 params={"ids": token_id, "vs_currencies": "usd"}
             )
             response.raise_for_status()  # Raise an error for bad responses
