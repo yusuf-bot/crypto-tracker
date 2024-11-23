@@ -142,6 +142,7 @@
                 <td id="current-value-bst">${{ (current_prices['bst'] ) | round(2) }}</td>
                 <td id="current-value-rio">${{ (current_prices['rio'] ) | round(2) }}</td>
                 <td id="current-value-ybr">${{ (current_prices['ybr'] ) | round(2) }}</td>
+                <td id="total-predicted"><strong>Total Predicted</strong></td>
                 <td colspan="2"></td>
             </tr>
             <tr>
@@ -151,6 +152,12 @@
                 <td>$5.00</td>  <!-- Dummy value for Bst -->
                 <td>$3.00</td>  <!-- Dummy value for Rio -->
                 <td>$2.00</td>  <!-- Dummy value for Ybr -->
+                <!-- <td> sum of all the predicted </td>-->
+                <td>$28.0<//** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: 'selector',
+  // ...
+}td>
                 <td colspan="2"></td>
             </tr>
 
@@ -229,9 +236,9 @@
     // Function to remove a client
     document.getElementById('addClientForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
-        
+
         fetch("{{ url_for('add_client') }}", {
             method: 'POST',
             body: formData
@@ -255,7 +262,7 @@
 
     function removeClient(clientId) {
         if (confirm("Are you sure you want to remove this client?")) {
-            fetch(`/remove_client/${clientId}`, { 
+            fetch(`/remove_client/${clientId}`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -279,6 +286,6 @@
             });
         }
     }
-</script>   
+</script>
 </body>
 </html>

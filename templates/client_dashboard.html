@@ -27,13 +27,13 @@
                 tokens.forEach(token => {
                     // Get the number of tokens held
                     const tokensHeld = parseFloat(document.querySelector(`#tokens-held-${token}`).textContent);
-                    
+
                     // Calculate current value
                     const currentValue = (data[token] * tokensHeld).toFixed(2);
-                    
+
                     // Update the current value cell
                     document.querySelector(`#current-inv-${token}`).textContent = currentValue;
-                    
+
                     // Add to total value
                     totalValue += parseFloat(currentValue);
                 });
@@ -126,6 +126,33 @@
                 <td colspan="3"><strong>Total Invested (USD)</strong></td>
                 <td>{{ client.converted_to_usd }}</td>
             </tr>
+            <tr>
+                <td colspan="2" rowspan="4"><strong>Commission</strong></td>
+                <!--<td>{{ client.commission_percentage}}-->
+            </tr>
+            <tr>
+                <td colspan="1"><strong>%</strong></td>
+                <td>000</td>
+            </tr>
+            <tr>
+                <td colspan="1"><strong>AED</strong></td>
+                <td>001</td>
+            </tr>
+            <tr>
+                <td colspan="1"><strong>USD</strong></td>
+                <td>010</td>
+            </tr>
+            <tr>
+                <td colspan="2" rowspan="3"><strong>Payout</strong></td>
+            </tr>
+            <tr>
+                <td colspan="1"><strong>AED</strong></td>
+                <td>001</td>
+            </tr>
+            <tr>
+                <td colspan="1"><strong>USD</strong></td>
+                <td>010</td>
+            </tr>
         </tfoot>
     </table>
     <div>
@@ -135,4 +162,4 @@
         <p id="profit-loss"></p>
     </div>
 </body>
-</html> 
+</html>
