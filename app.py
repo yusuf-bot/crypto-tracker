@@ -1,11 +1,44 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
+from flask import Flask, render_template, abort, redirect, url_for, request, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import os
+
+from pip._vendor import cachecontrol
+
+import requests
+import json
+from flask import jsonify  # Add this import for the jsonify function
+import time
+from oauthlib.oauth2 import OAuth2Error  # Add this import for OAuth2 error handling  # Import the scraping function
 from crypto_price_service import price_service 
 from token_price_cache import price_cache  # Import our price cache
+from apscheduler.schedulers.background import BackgroundScheduler
 
+
+
+# Updated global current_prices
+current_prices = {
+    'rndr': 0.0,
+    'bst': 0.0,
+    'ybr': 0.0,
+    'rio': 0.0,
+    'props': 0.0,
+}
+
+def update_prices(current_prices):
+    """Update prices for all tokens using CoinGecko API."""
+    print('hello world')
+    for token in current_prices.keys():
+        price = price_service.get_current_price(token)
+        if price > 0:
+            current_prices[token] = price
+        else:
+            print(f"Failed to fetch price for {token}, keeping previous value.")
+    print(f"Updated prices: {current_prices}")
+    return current_prices  # Debugging
+
+# Schedule the price update every 2 minutes
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -13,27 +46,34 @@ app.secret_key = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
+
 # Initialize database, bcrypt, and login manager
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Changed from 'login_page' to 'login'
 
-# User model
+
+
+# Update User model to include Google ID
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
-    role = db.Column(db.String(50), nullable=False)  # 'admin' or 'client'
+    password = db.Column(db.String(150), nullable=True)  # Made nullable for Google login
+    role = db.Column(db.String(50), nullable=False)
 
-# Client model
+
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     amount_invested_aed = db.Column(db.Float, nullable=False)
-    tokens_held = db.Column(db.Integer, nullable=False)
-    token_name = db.Column(db.String(100), nullable=False)
+    tokens_held_rndr = db.Column(db.Integer, nullable=False, default=0)  # For Render tokens
+    tokens_held_props = db.Column(db.Integer, nullable=False, default=0)  # For Propbase tokens
+    tokens_held_bst = db.Column(db.Integer, nullable=False, default=0)  # For Blocksquare tokens
+    tokens_held_rio = db.Column(db.Integer, nullable=False, default=0)  # For Realio tokens
+    tokens_held_ybr = db.Column(db.Integer, nullable=False, default=0)  # For YieldBricks tokens
     price_prediction = db.Column(db.Float, nullable=False)
 
 @login_manager.user_loader
@@ -45,19 +85,102 @@ def load_user(user_id):
 def home():
     return redirect(url_for('login'))
 
-# Login routes
-@app.route('/login', methods=['GET'])
-def login():
-    return render_template('login_page.html')
 
-@app.route('/login', methods=['POST'])
-def handle_login():
+@app.route('/test_update_prices')
+def test_update_prices():
+    global current_prices
+    current_prices=update_prices(current_prices)  # Call the function directly
+    return (current_prices)
+
+@app.route('/add_client', methods=['GET', 'POST'])
+@login_required
+def add_client():
+    # Check if user is admin
+    if current_user.role != 'admin':
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        try:
+            # Extract client data from form
+            name = request.form.get('name')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            # Create a new user for the client
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+            new_user = User(
+                name=name,
+                email=email,
+                password=hashed_password,
+                role='client'
+            )
+            db.session.add(new_user)
+            db.session.flush()  # This will populate the id without committing
+            
+            # Create new client record
+            new_client = Client(
+                name=name,
+                amount_invested_aed=float(request.form.get('amount_invested_aed')),
+                tokens_held_rndr=float(request.form.get('tokens_rndr')),
+                tokens_held_props=float(request.form.get('tokens_props')),
+                tokens_held_bst=float(request.form.get('tokens_bst')),
+                tokens_held_rio=float(request.form.get('tokens_rio')),
+                tokens_held_ybr=float(request.form.get('tokens_ybr')),
+                price_prediction=0.0  # You might want to add this to the form or set a default
+            )
+            db.session.add(new_client)
+            db.session.commit()
+            
+            flash('Client added successfully', 'success')
+            return redirect(url_for('admin_dashboard'))
+        
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding client: {str(e)}', 'danger')
+            return redirect(url_for('admin_dashboard'))
+    
+    # If it's a GET request, redirect to admin dashboard
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/remove_client/<int:client_id>', methods=['DELETE'])
+@login_required
+def remove_client(client_id):
+    # Check if user is admin
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    try:
+        # Find and delete the client
+        client = Client.query.get_or_404(client_id)
+        
+        # Also find and delete the associated user
+        user = User.query.filter_by(name=client.name).first()
+        
+        if user:
+            db.session.delete(user)
+        
+        db.session.delete(client)
+        db.session.commit()
+        
+        return jsonify({'message': 'Client removed successfully'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+
+# Regular login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login_page.html')
+    
     email = request.form.get('email')
     password = request.form.get('password')
     
     user = User.query.filter_by(email=email).first()
     
-    if user and bcrypt.check_password_hash(user.password, password):
+    if user and user.password and bcrypt.check_password_hash(user.password, password):
         login_user(user)
         flash('Login successful!', 'success')
         if user.role == 'admin':
@@ -65,8 +188,17 @@ def handle_login():
         else:
             return redirect(url_for('client_dashboard'))
     else:
-        flash('Invalid email or password!', 'danger')
+        flash('Invalid email or password!', 'error')
         return redirect(url_for('login'))
+
+# Error handler for OAuth errors
+@app.errorhandler(Exception)
+def handle_error(error):
+    if isinstance(error, OAuth2Error):
+        flash('Failed to authenticate with Google.', 'error')
+        return redirect(url_for('login'))
+    raise error
+
 
 # Admin dashboard
 @app.route('/admin/dashboard')
@@ -77,33 +209,37 @@ def admin_dashboard():
         return redirect(url_for('home'))
 
     clients = Client.query.all()
-    conversion_rate_aed_to_usd = 0.27
-    
+    conversion_rate_aed_to_usd = 3.67
+
+    # Totals
+    total_rndr = total_props = total_bst = total_rio = total_ybr = 0
+    total_invested_aed = 0
+
     for client in clients:
-        # Convert AED investment to USD
-        client.converted_to_usd = client.amount_invested_aed * conversion_rate_aed_to_usd
-        
-        # Get current holdings data from cache
-        holdings_data = price_cache.calculate_holdings(
-            client.token_name,
-            client.tokens_held
-        )
-        
-        # Update client object with current values
-        client.current_price = holdings_data['current_price']
-        client.current_holdings = holdings_data['total_value']
-        client.last_updated = holdings_data['last_updated']
-        client.data_source = holdings_data['data_source']
-        
-        # Calculate profit/loss
-        if client.current_holdings > 0:
-            client.profit_loss = client.current_holdings - client.converted_to_usd
-            client.profit_loss_percentage = (client.profit_loss / client.converted_to_usd) * 100
-        else:
-            client.profit_loss = 0
-            client.profit_loss_percentage = 0
-    
-    return render_template('admin_dashboard.html', clients=clients)
+        total_rndr += client.tokens_held_rndr
+        total_props += client.tokens_held_props
+        total_bst += client.tokens_held_bst
+        total_rio += client.tokens_held_rio
+        total_ybr += client.tokens_held_ybr
+        total_invested_aed += client.amount_invested_aed
+
+    total_invested_usd = total_invested_aed / conversion_rate_aed_to_usd
+    for client in clients:
+        client.converted_to_usd = round(client.amount_invested_aed / conversion_rate_aed_to_usd, 2)
+
+
+    return render_template(
+        'admin_dashboard.html',
+        clients=clients,
+        current_prices=current_prices,
+        total_rndr=total_rndr,
+        total_props=total_props,
+        total_bst=total_bst,
+        total_rio=total_rio,
+        total_ybr=total_ybr,
+        total_invested_usd=total_invested_usd,
+        total_invested_aed=total_invested_aed,
+    )
 
 
 @app.route('/client/dashboard')
@@ -115,29 +251,21 @@ def client_dashboard():
 
     current_client = Client.query.filter_by(name=current_user.name).first()
     if current_client:
-        conversion_rate_aed_to_usd = 0.27
-        current_client.converted_to_usd = current_client.amount_invested_aed * conversion_rate_aed_to_usd
-        
-        # Get current holdings data from cache
-        holdings_data = price_cache.calculate_holdings(
-            current_client.token_name,
-            current_client.tokens_held
-        )
-        
-        # Update client object with current values
-        current_client.current_price = holdings_data['current_price']
-        current_client.current_holdings = holdings_data['total_value']
-        current_client.last_updated = holdings_data['last_updated']
-        current_client.data_source = holdings_data['data_source']
-        
-        # Calculate profit/loss
-        if current_client.current_holdings > 0:
-            current_client.profit_loss = current_client.current_holdings - current_client.converted_to_usd
-            current_client.profit_loss_percentage = (current_client.profit_loss / current_client.converted_to_usd) * 100
-        else:
-            current_client.profit_loss = 0
-            current_client.profit_loss_percentage = 0
-        
+        conversion_rate_aed_to_usd = 3.67
+        current_client.converted_to_usd = round(current_client.amount_invested_aed / conversion_rate_aed_to_usd, 2)
+
+        # Calculate the current value of each token
+        current_values = {}
+        for token in ['rndr', 'props', 'bst', 'rio', 'ybr']:
+            current_values[token] = current_prices[token] * getattr(current_client, f'tokens_held_{token}')
+
+        # Calculate total value of all tokens
+        total_value = sum(current_values.values())
+
+        # Update the client object with current values
+        current_client.current_values = current_values
+        current_client.total_value = total_value
+
         return render_template('client_dashboard.html', client=current_client)
     else:
         flash('No holdings found for this account.', 'info')
@@ -145,32 +273,16 @@ def client_dashboard():
 
 # Define a flag to track
 #  whether the function has already run
-
 @app.route('/api/prices/update')
 @login_required
-def update_prices():
-    """API endpoint for getting updated prices via AJAX"""
-    if current_user.role == 'admin':
-        clients = Client.query.all()
-        updates = {}
+def update_prices_for_clients():
+    """API endpoint for getting updated prices via AJAX."""
+    if current_user.role in ('admin','client'):
+        global current_prices
+        current_prices = update_prices(current_prices)  # Call the function to update prices
         
-        for client in clients:
-            holdings_data = price_cache.calculate_holdings(
-                client.token_name,
-                client.tokens_held
-            )
-            updates[client.name] = holdings_data
-        
-        return jsonify(updates)
-    
-    else:
-        client = Client.query.filter_by(name=current_user.name).first()
-        if client:
-            holdings_data = price_cache.calculate_holdings(
-                client.token_name,
-                client.tokens_held
-            )
-            return jsonify({client.name: holdings_data})
+        # Return the updated prices
+        return jsonify(current_prices)
     
     return jsonify({'error': 'Unauthorized'}), 401
 
@@ -204,8 +316,11 @@ def initialize_on_first_request():
             client1_data = Client(
                 name='Client1',
                 amount_invested_aed=10000.0,
-                tokens_held=50,
-                token_name='Bitcoin',
+                tokens_held_rndr=50,  # Correctly set Render tokens
+                tokens_held_props=10,  # Example for Propbase tokens
+                tokens_held_bst=5,     # Example for Blocksquare tokens
+                tokens_held_rio=3,     # Example for Realio tokens
+                tokens_held_ybr=2,     # Example for YieldBricks tokens
                 price_prediction=200.0
             )
             db.session.add(client1)
@@ -222,12 +337,16 @@ def initialize_on_first_request():
             client2_data = Client(
                 name='Client2',
                 amount_invested_aed=20000.0,
-                tokens_held=30,
-                token_name='Ethereum',
+                tokens_held_rndr=30,  # Example for Render tokens
+                tokens_held_props=20,  # Example for Propbase tokens
+                tokens_held_bst=10,    # Example for Blocksquare tokens
+                tokens_held_rio=5,     # Example for Realio tokens
+                tokens_held_ybr=3,     # Example for YieldBricks tokens
                 price_prediction=300.0
             )
             db.session.add(client2)
             db.session.add(client2_data)
+
 
         # Add Client 3
         if not User.query.filter_by(email='client3@example.com').first():
@@ -240,12 +359,15 @@ def initialize_on_first_request():
             client3_data = Client(
                 name='Client3',
                 amount_invested_aed=15000.0,
-                tokens_held=40,
-                token_name='Ripple',
+                tokens_held_rndr=40,  # Example for Render tokens
+                tokens_held_props=15,  # Example for Propbase tokens
+                tokens_held_bst=8,     # Example for Blocksquare tokens
+                tokens_held_rio=4,     # Example for Realio tokens
+                tokens_held_ybr=1, 
                 price_prediction=100.0
             )
             db.session.add(client3)
-            db.session.add(client3_data)
+            db.session.add(client3_data) 
 
         # Commit changes to the database
         db.session.commit()
