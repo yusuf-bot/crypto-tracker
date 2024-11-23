@@ -6,28 +6,133 @@
     <title>Client Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
-        table { margin: 20px auto; width: 50%; border-collapse: collapse; }
+        table { margin: 20px auto; width: 80%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 10px; }
         th { background: #007BFF; color: white; }
     </style>
+<script>
+    function updatePrices() {
+        fetch('/api/prices/update')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update current values for each token
+                const tokens = ['rndr', 'props', 'bst', 'rio', 'ybr'];
+                let totalValue = 0;
+
+                tokens.forEach(token => {
+                    // Get the number of tokens held
+                    const tokensHeld = parseFloat(document.querySelector(`#tokens-held-${token}`).textContent);
+                    
+                    // Calculate current value
+                    const currentValue = (data[token] * tokensHeld).toFixed(2);
+                    
+                    // Update the current value cell
+                    document.querySelector(`#current-inv-${token}`).textContent = currentValue;
+                    
+                    // Add to total value
+                    totalValue += parseFloat(currentValue);
+                });
+
+                // Update total value
+                document.querySelector('#total-current-value').textContent = totalValue.toFixed(2);
+                document.querySelector('#total-current-value-aed').textContent = totalValue.toFixed(2);
+
+                // Calculate profit/loss
+                const investedAmount = parseFloat("{{ client.amount_invested_aed }}"); // Amount invested in AED
+                const profitLoss = totalValue - investedAmount;
+                const profitLossPercentage = (profitLoss / investedAmount) * 100;
+
+                // Update profit/loss display
+                const profitLossElement = document.querySelector('#profit-loss');
+                if (profitLoss >= 0) {
+                    profitLossElement.innerHTML = `Profit/Loss: <span style="color: green;">+${profitLoss.toFixed(2)} AED (+${profitLossPercentage.toFixed(2)}%)</span>`;
+                } else {
+                    profitLossElement.innerHTML = `Profit/Loss: <span style="color: red;">-${(-profitLoss).toFixed(2)} AED (${profitLossPercentage.toFixed(2)}%)</span>`;
+                }
+                // Update current prices
+                tokens.forEach(token => {
+                    document.querySelector(`#current-price-${token}`).textContent = data[token].toFixed(2);
+                });
+            })
+            .catch(error => console.error('Error fetching prices:', error));
+    }
+
+    // Call update prices on page load
+     updatePrices();
+
+    // Set interval to update prices every 2 minutes
+    setInterval(updatePrices, 120000);
+</script>
 </head>
 <body>
     <h1>Welcome, {{ client.name }}</h1>
+    <h2>Amount Invested: {{ client.amount_invested_aed }}</h2>
     <table>
-        <tr>
-            <th>Token</th>
-            <th>Tokens Held</th>
-            <th>Invested Amount (AED)</th>
-            <th>Converted Amount (USD)</th>
-            <th>Current Holdings</th>
-        </tr>
-        <tr>
-            <td>{{ client.token_name }}</td>
-            <td>{{ client.tokens_held }}</td>
-            <td>{{ client.amount_invested_aed }}</td>
-            <td>{{ client.converted_to_usd }}</td>
-            <td>{{ client.current_holdings }}</td>
-        </tr>
+        <thead>
+            <tr>
+                <th>Token</th>
+                <th>Tokens Held</th>
+                <th>Current Price</th>
+                <th>Current Investment Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Render (RNDR)</td>
+                <td id="tokens-held-rndr">{{ client.tokens_held_rndr }}</td>
+                <td id="current-price-rndr">-</td>
+                <td id="current-inv-rndr">-</td>
+            </tr>
+            <tr>
+                <td>Propbase (PROPS)</td>
+                <td id="tokens-held-props">{{ client.tokens_held_props }}</td>
+                <td id="current-price-props">-</td>
+                <td id="current-inv-props">-</td>
+            </tr>
+            <tr>
+                <td>Blocksquare (BST)</td>
+                <td id="tokens-held-bst">{{ client.tokens_held_bst }}</td>
+                <td id="current-price-bst">-</td>
+                <td id="current-inv-bst">-</td>
+            </tr>
+            <tr>
+                <td>Realio (RIO)</td>
+                <td id="tokens-held-rio">{{ client.tokens_held_rio }}</td>
+                <td id="current-price-rio">-</td>
+                <td id="current-inv-rio">-</td>
+            </tr>
+            <tr>
+                <td>YieldBricks (YBR)</td>
+                <td id="tokens-held-ybr">{{ client.tokens_held_ybr }}</td>
+                <td id="current-price-ybr">-</td>
+                <td id="current-inv-ybr">-</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total Current Value</strong></td>
+                <td id="total-current-value">-</td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Total Invested (AED)</strong></td>
+                <td>{{ client.amount_invested_aed }}</td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Total Invested (USD)</strong></td>
+                <td>{{ client.converted_to_usd }}</td>
+            </tr>
+        </tfoot>
     </table>
+    <div>
+        <h2>Investment Performance</h2>
+        <p>Total Invested (AED): {{ client.amount_invested_aed | round(2) }}</p>
+        <p>Total Current Value (AED): <span id="total-current-value-aed">{{ client.total_value | round(2) }}</span></p>
+        <p id="profit-loss"></p>
+    </div>
 </body>
-</html>
+</html> 
