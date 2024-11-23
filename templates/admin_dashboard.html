@@ -9,31 +9,276 @@
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #007BFF; color: white; }
         body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
+<script>
+    // Function to update prices
+    function updatePrices() {
+        fetch('/api/prices/update')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update the current values in the dashboard
+                document.querySelector('#current-value-rndr').innerText = (data['rndr'] ).toFixed(2);
+                document.querySelector('#current-value-props').innerText = (data['props'] ).toFixed(2);
+                document.querySelector('#current-value-bst').innerText = (data['bst'] ).toFixed(2);
+                document.querySelector('#current-value-rio').innerText = (data['rio'] ).toFixed(2);
+                document.querySelector('#current-value-ybr').innerText = (data['ybr'] ).toFixed(2);
+
+                // If you want to update any other data, you can do it here
+                // For example, if you want to update only the current prices and not the clients' investments
+            })
+            .catch(error => console.error('Error fetching prices:', error));
+    }
+    updatePrices();
+
+    // Set the interval to update prices every 2 minutes (120000 milliseconds)
+    setInterval(updatePrices, 120000); // Call updatePrices every 2 minutes
+</script>
+<script>
+    // Function to open the modal
+    function openModal() {
+        document.getElementById("myModal").style.display = "block";
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        document.getElementById("myModal").style.display = "none";
+    }
+
+    // Function to remove a client
+    function removeClient(clientId) {
+        if (confirm("Are you sure you want to remove this client?")) {
+            // Make an AJAX request to remove the client
+            fetch(`/remove_client/${clientId}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload(); // Reload the page to see changes
+                    } else {
+                        alert('Failed to remove client.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    }
+</script>
 </head>
 <body>
     <h1>Admin Dashboard</h1>
     <table>
-        <tr>
-            <th>Name</th>
-            <th>Token</th>
-            <th>Tokens Held</th>
-            <th>Price Prediction</th>
-            <th>Invested Amount (AED)</th>
-            <th>Converted Amount (USD)</th>
-            <th>Current Holdings</th>
-        </tr>
-        {% for client in clients %}
-        <tr>
-            <td>{{ client.name }}</td>
-            <td>{{ client.token_name }}</td>
-            <td>{{ client.tokens_held }}</td>
-            <td>{{ client.price_prediction }}</td>
-            <td>{{ client.amount_invested_aed }}</td>
-            <td>{{ client.converted_to_usd }}</td>
-            <td>{{ client.current_holdings }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>Client Name</th>
+                <th>Tokens Held (Rndr)</th>
+                <th>Tokens Held (Props)</th>
+                <th>Tokens Held (Bst)</th>
+                <th>Tokens Held (Rio)</th>
+                <th>Tokens Held (Ybr)</th>
+                <th>Amount Invested (USD)</th>
+                <th>Amount Invested (AED)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr data-client-name="{{ client.name }}">
+                <td>{{ client.name }}</td>
+                <td>{{ client.tokens_held_rndr }}</td>
+                <td>{{ client.tokens_held_props }}</td>
+                <td>{{ client.tokens_held_bst }}</td>
+                <td>{{ client.tokens_held_rio }}</td>
+                <td>{{ client.tokens_held_ybr }}</td>
+                <td class="converted-to-usd">{{ client.converted_to_usd }}</td> <!-- Converted amount in USD -->
+                <td class="amount-invested-aed">{{ client.amount_invested_aed }}</td> <!-- Amount invested in AED -->
+            </tr>
+            {% endfor %}
+            <tr>
+                <td><strong>Total Tokens Held</strong></td>
+                <td>{{ total_rndr }}</td>
+                <td>{{ total_props }}</td>
+                <td>{{ total_bst }}</td>
+                <td>{{ total_rio }}</td>
+                <td>{{ total_ybr }}</td>
+                <td colspan="2"></td>
+            </tr>
+            <tr>
+                <td><strong>Current Values</strong></td>
+                <td id="current-value-rndr">${{ (current_prices['rndr']) | round(2) }}</td>
+                <td id="current-value-props">${{ (current_prices['props']) | round(2) }}</td>
+                <td id="current-value-bst">${{ (current_prices['bst'] ) | round(2) }}</td>
+                <td id="current-value-rio">${{ (current_prices['rio'] ) | round(2) }}</td>
+                <td id="current-value-ybr">${{ (current_prices['ybr'] ) | round(2) }}</td>
+                <td colspan="2"></td>
+            </tr>
+            <tr>
+                <td><strong>Price Prediction</strong></td>
+                <td>$10.00</td> <!-- Dummy value for Rndr -->
+                <td>$7.00</td>  <!-- Dummy value for Props -->
+                <td>$5.00</td>  <!-- Dummy value for Bst -->
+                <td>$3.00</td>  <!-- Dummy value for Rio -->
+                <td>$2.00</td>  <!-- Dummy value for Ybr -->
+                <td colspan="2"></td>
+            </tr>
+
+        </tbody>
     </table>
+    <button onclick="openModal()">Add New Client</button>
+   <!-- Modal for Adding New Client -->
+<!-- Modal for Adding New Client -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Add New Client</h2>
+        <form id="addClientForm" method="POST" action="{{ url_for('add_client') }}">
+            <div>
+                <label for="name">Client Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div>
+                <label for="amount_invested_aed">Amount Invested (AED):</label>
+                <input type="number" id="amount_invested_aed" name="amount_invested_aed" step="0.01" required oninput="updateAmountInvestedUSD()">
+            </div>
+            <div>
+                <label for="tokens_rndr">Tokens Held (Rndr):</label>
+                <input type="number" id="tokens_rndr" name="tokens_rndr" step="0.01" required>
+            </div>
+            <div>
+                <label for="tokens_props">Tokens Held (Props):</label>
+                <input type="number" id="tokens_props" name="tokens_props" step="0.01" required>
+            </div>
+            <div>
+                <label for="tokens_bst">Tokens Held (Bst):</label>
+                <input type="number" id="tokens_bst" name="tokens_bst" step="0.01" required>
+            </div>
+            <div>
+                <label for="tokens_rio">Tokens Held (Rio):</label>
+                <input type="number" id="tokens_rio" name="tokens_rio" step="0.01" required>
+            </div>
+            <div>
+                <label for="tokens_ybr">Tokens Held (Ybr):</label>
+                <input type="number" id="tokens_ybr" name="tokens_ybr" step="0.01" required>
+            </div>
+            <div>
+                <button type="submit">Add Client</button>
+                <button type="button" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateAmountInvestedUSD() {
+        const amountInvestedAED = parseFloat(document.getElementById('amount_invested_aed').value) || 0;
+        const conversionRateAEDtoUSD = 3.67; // Example conversion rate
+        const amountInvestedUSD = (amountInvestedAED / conversionRateAEDtoUSD).toFixed(2);
+        document.getElementById('amount_invested_usd').value = amountInvestedUSD;
+    }
+</script>
+<script>
+    // Enhanced modal and client management script
+    function openModal() {
+        document.getElementById("myModal").style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById("myModal").style.display = "none";
+    }
+
+    // Function to remove a client
+    document.getElementById('addClientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch("{{ url_for('add_client') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Redirect or reload the page
+                window.location.href = "{{ url_for('admin_dashboard') }}";
+            } else {
+                // Handle errors
+                return response.text().then(errorMessage => {
+                    throw new Error(errorMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+        });
+    });
+
+    function removeClient(clientId) {
+        if (confirm("Are you sure you want to remove this client?")) {
+            fetch(`/remove_client/${clientId}`, { 
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the row from the table
+                    const row = document.querySelector(`tr[data-client-id="${clientId}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    alert('Client removed successfully');
+                    location.reload(); // Reload the page to refresh the client list
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to remove client');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        }
+    }
+</script>   
 </body>
 </html>
