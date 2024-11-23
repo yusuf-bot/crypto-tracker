@@ -1,4 +1,5 @@
 import requests
+import random
 
 class CryptoPriceService:
     def __init__(self):
@@ -19,16 +20,21 @@ class CryptoPriceService:
         Returns:
             float: Current price of the token or 0.0 if not found.
         """
+
+        UserAgents=['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36']
+
         token_id = self.token_map.get(token_name)
         if not token_id:
             print(f"Token {token_name} not found in token map.")
             return 0.0
 
         try:
-            # Use CoinGecko's simple price API
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(
-                "https://api.coingecko.com/api/v3/simple/price",headers=headers,
+           
+            response = requests.get("https://api.coingecko.com/api/v3/simple/price",headers={'User-Agent':  random.choice(UserAgents)},
                 params={"ids": token_id, "vs_currencies": "usd"}
             )
             response.raise_for_status()  # Raise an error for bad responses
