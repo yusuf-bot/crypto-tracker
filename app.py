@@ -1,4 +1,4 @@
-from flask import Flask, render_template, abort, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -254,7 +254,9 @@ def admin_dashboard():
         total_invested_usd=total_invested_usd,
         total_invested_aed=total_invested_aed,
     )
-
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(app.static_folder, 'favicon.ico')
 
 @app.route('/client/dashboard')
 @login_required
