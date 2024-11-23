@@ -5,17 +5,17 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import os
 import sys
 from pip._vendor import cachecontrol
-
+import logging
+from flask_cors import CORS
 import requests
 import json
 from flask import jsonify  # Add this import for the jsonify function
 import time
 from oauthlib.oauth2 import OAuth2Error  # Add this import for OAuth2 error handling  # Import the scraping function
 from crypto_price_service import price_service 
-from apscheduler.schedulers.background import BackgroundScheduler
 
 
-
+os.chmod(os.path.abspath(__file__), 0o755)
 # Updated global current_prices
 current_prices = {
     'rndr': 0.0,
@@ -44,6 +44,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 
+logging.basicConfig(level=logging.INFO)
+
+
 # Initialize Flask app
 app = Flask(__name__)
 import secrets  # Use this for secure secret key generation
@@ -55,6 +58,22 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(INSTANCE_DIR
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+@app.before_request
+def log_request_info():
+    logging.info('Headers: %s', request.headers)
+    logging.info('Method: %s', request.method)
+    logging.info('Path: %s', request.path)
+
+@app.route('/debug')
+def debug():
+    return {
+        'headers': dict(request.headers),
+        'method': request.method,
+        'path': request.path
+    }
 
 
 # Initialize database, bcrypt, and login manager
@@ -451,4 +470,4 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=10000,debug=True)
