@@ -1,0 +1,25 @@
+# Web Framework
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+flask-login==0.6.3
+flask-bcrypt==1.0.1
+
+# Database
+SQLAlchemy==2.0.23
+
+# Authentication and Security
+oauthlib==3.2.2
+requests==2.31.0
+
+# Background Tasks
+apscheduler==3.10.4
+
+# Additional Utilities
+python-dotenv==1.0.0
+gunicorn==21.2.0  # For production deployment on Render
+
+# API Interactions
+urllib3==2.1.0
+
+# Optional but recommended
+email-validator==2.1.0
