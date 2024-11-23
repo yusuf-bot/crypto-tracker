@@ -26,8 +26,9 @@ class CryptoPriceService:
 
         try:
             # Use CoinGecko's simple price API
+            headers = {"User-Agent": "Mozilla/5.0"}
             response = requests.get(
-                "https://api.coingecko.com/api/v3/simple/price",
+                "https://api.coingecko.com/api/v3/simple/price",headers=headers,
                 params={"ids": token_id, "vs_currencies": "usd"}
             )
             response.raise_for_status()  # Raise an error for bad responses
