@@ -6,6 +6,7 @@ load_dotenv()
 class CryptoPriceService:
     def __init__(self):
         # Mapping of tokens to their CoinGecko IDs
+        self.api_key=os.getenv("COINGECKO_API_KEY")
         self.token_map = {
             'rndr': 'render-token',
             'bst': 'blocksquare',
@@ -15,16 +16,9 @@ class CryptoPriceService:
         }
         
         self.headers = {
-            'Accept': 'text/html, image/avif, image/webp, image/apng, image/svg+xml, */*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'en-US, en;q=0.9',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-User': '?1',
-            'Sec-Fetch-Site': 'none',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+            'Authorization': f'Apikey {self.api_key}',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
         }
 
     def get_current_price(self, token_name: str) -> float:
@@ -122,4 +116,4 @@ class CryptoComparePriceService:
             logging.error(f"Unexpected error for {token_name}: {e}")
             return 0.0
 # Initialize the service
-price_service = CryptoComparePriceService()
+price_service = CryptoPriceService()
