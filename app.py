@@ -38,11 +38,12 @@ def update_prices(current_prices):
     return current_prices  # Debugging
 
 # Schedule the price update every 2 minutes
+os.makedirs('instance', exist_ok=True)
 
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'+ os.path.abspath('instance/users.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -68,12 +69,17 @@ class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     amount_invested_aed = db.Column(db.Float, nullable=False)
-    tokens_held_rndr = db.Column(db.Integer, nullable=False, default=0)  # For Render tokens
-    tokens_held_props = db.Column(db.Integer, nullable=False, default=0)  # For Propbase tokens
-    tokens_held_bst = db.Column(db.Integer, nullable=False, default=0)  # For Blocksquare tokens
-    tokens_held_rio = db.Column(db.Integer, nullable=False, default=0)  # For Realio tokens
-    tokens_held_ybr = db.Column(db.Integer, nullable=False, default=0)  # For YieldBricks tokens
+    tokens_held_rndr = db.Column(db.Integer, nullable=False, default=0)
+    tokens_held_props = db.Column(db.Integer, nullable=False, default=0)
+    tokens_held_bst = db.Column(db.Integer, nullable=False, default=0)
+    tokens_held_rio = db.Column(db.Integer, nullable=False, default=0)
+    tokens_held_ybr = db.Column(db.Integer, nullable=False, default=0)
     price_prediction = db.Column(db.Float, nullable=False)
+    
+    # New commission-related fields
+    commission_percentage = db.Column(db.Float, nullable=False, default=10.0)  # Default 10%
+    commission_type = db.Column(db.String(50), nullable=False, default='percentage')  # or 'fixed'
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -248,28 +254,58 @@ def client_dashboard():
         flash('Unauthorized access', 'danger')
         return redirect(url_for('home'))
 
+    # Ensure prices are updated
+    global current_prices
+    current_prices = update_prices(current_prices)
+
     current_client = Client.query.filter_by(name=current_user.name).first()
     if current_client:
         conversion_rate_aed_to_usd = 3.67
         current_client.converted_to_usd = round(current_client.amount_invested_aed / conversion_rate_aed_to_usd, 2)
 
         # Calculate the current value of each token
-        current_values = {}
-        for token in ['rndr', 'props', 'bst', 'rio', 'ybr']:
-            current_values[token] = current_prices[token] * getattr(current_client, f'tokens_held_{token}')
+        current_values = {
+            'rndr': current_prices['rndr'] * current_client.tokens_held_rndr,
+            'props': current_prices['props'] * current_client.tokens_held_props,
+            'bst': current_prices['bst'] * current_client.tokens_held_bst,
+            'rio': current_prices['rio'] * current_client.tokens_held_rio,
+            'ybr': current_prices['ybr'] * current_client.tokens_held_ybr
+        }
 
         # Calculate total value of all tokens
         total_value = sum(current_values.values())
 
-        # Update the client object with current values
-        current_client.current_values = current_values
-        current_client.total_value = total_value
+        # Calculate commission
+        if current_client.commission_type == 'percentage':
+            commission_amount = total_value * (current_client.commission_percentage / 100)
+            net_value = total_value - commission_amount
+        else:
+            # If it's a fixed commission, you might want to adjust this logic
+            commission_amount = current_client.commission_percentage
+            net_value = total_value - commission_amount
 
-        return render_template('client_dashboard.html', client=current_client)
+        # Prepare client data with current prices and values
+        client_data = {
+            'name': current_client.name,
+            'amount_invested_aed': current_client.amount_invested_aed,
+            'converted_to_usd': current_client.converted_to_usd,
+            'tokens_held_rndr': current_client.tokens_held_rndr,
+            'tokens_held_props': current_client.tokens_held_props,
+            'tokens_held_bst': current_client.tokens_held_bst,
+            'tokens_held_rio': current_client.tokens_held_rio,
+            'tokens_held_ybr': current_client.tokens_held_ybr,
+            'current_prices': current_prices,
+            'current_values': current_values,
+            'total_value': total_value,
+            'commission_percentage': current_client.commission_percentage,
+            'commission_amount': commission_amount,
+            'net_value': net_value
+        }
+
+        return render_template('client_dashboard.html', client=client_data)
     else:
         flash('No holdings found for this account.', 'info')
         return redirect(url_for('home'))
-
 # Define a flag to track
 #  whether the function has already run
 @app.route('/api/prices/update')
@@ -292,7 +328,9 @@ def initialize_on_first_request():
     global first_request_done
     if not first_request_done:
         # Run database initialization logic
-        db.create_all()
+        with app.app_context():
+            db.create_all()
+     
 
         # Add test accounts (admin and clients)
         if not User.query.filter_by(email='admin@example.com').first():
@@ -320,7 +358,9 @@ def initialize_on_first_request():
                 tokens_held_bst=5,     # Example for Blocksquare tokens
                 tokens_held_rio=3,     # Example for Realio tokens
                 tokens_held_ybr=2,     # Example for YieldBricks tokens
-                price_prediction=200.0
+                price_prediction=200.0,
+                commission_percentage=10.0,  # 10% commission
+                commission_type='percentage'
             )
             db.session.add(client1)
             db.session.add(client1_data)
@@ -341,7 +381,9 @@ def initialize_on_first_request():
                 tokens_held_bst=10,    # Example for Blocksquare tokens
                 tokens_held_rio=5,     # Example for Realio tokens
                 tokens_held_ybr=3,     # Example for YieldBricks tokens
-                price_prediction=300.0
+                price_prediction=300.0,
+                commission_percentage=10.0,  # 10% commission
+                commission_type='percentage'
             )
             db.session.add(client2)
             db.session.add(client2_data)
@@ -363,7 +405,9 @@ def initialize_on_first_request():
                 tokens_held_bst=8,     # Example for Blocksquare tokens
                 tokens_held_rio=4,     # Example for Realio tokens
                 tokens_held_ybr=1, 
-                price_prediction=100.0
+                price_prediction=100.0,
+                commission_percentage=10.0,  # 10% commission
+                commission_type='percentage'
             )
             db.session.add(client3)
             db.session.add(client3_data) 
@@ -381,6 +425,13 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'success')
     return redirect(url_for('login_page'))
+
+
+# In your app.py, before running the app
+with app.app_context():
+    db.drop_all()  # Drops all existing tables
+    db.create_all()  # Recreates tables with new schema
+
 
 if __name__ == '__main__':
     app.run(debug=True)

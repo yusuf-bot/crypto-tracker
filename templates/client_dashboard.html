@@ -20,7 +20,6 @@
                 return response.json();
             })
             .then(data => {
-                // Update current values for each token
                 const tokens = ['rndr', 'props', 'bst', 'rio', 'ybr'];
                 let totalValue = 0;
 
@@ -33,19 +32,28 @@
 
                     // Update the current value cell
                     document.querySelector(`#current-inv-${token}`).textContent = currentValue;
+                    document.querySelector(`#current-price-${token}`).textContent = data[token].toFixed(2);
 
                     // Add to total value
                     totalValue += parseFloat(currentValue);
                 });
 
-                // Update total value
-                document.querySelector('#total-current-value').textContent = totalValue.toFixed(2);
-                document.querySelector('#total-current-value-aed').textContent = totalValue.toFixed(2);
+                // Get commission percentage
+                const commissionPercentage = parseFloat("{{ client.commission_percentage }}");
+                const investedAmount = parseFloat("{{ client.amount_invested_aed }}");
+
+                // Calculate commission and net value
+                const commissionAmount = (totalValue * (commissionPercentage / 100)).toFixed(2);
+                const netValue = (totalValue - commissionAmount).toFixed(2);
 
                 // Calculate profit/loss
-                const investedAmount = parseFloat("{{ client.amount_invested_aed }}"); // Amount invested in AED
                 const profitLoss = totalValue - investedAmount;
                 const profitLossPercentage = (profitLoss / investedAmount) * 100;
+
+                // Update total value elements
+                document.querySelector('#total-current-value').textContent = totalValue;
+                document.querySelector('#commission-amount').textContent = commissionAmount;
+                document.querySelector('#net-value').textContent = netValue;
 
                 // Update profit/loss display
                 const profitLossElement = document.querySelector('#profit-loss');
@@ -54,19 +62,15 @@
                 } else {
                     profitLossElement.innerHTML = `Profit/Loss: <span style="color: red;">-${(-profitLoss).toFixed(2)} AED (${profitLossPercentage.toFixed(2)}%)</span>`;
                 }
-                // Update current prices
-                tokens.forEach(token => {
-                    document.querySelector(`#current-price-${token}`).textContent = data[token].toFixed(2);
-                });
             })
             .catch(error => console.error('Error fetching prices:', error));
     }
 
     // Call update prices on page load
-     updatePrices();
+    updatePrices();
 
     // Set interval to update prices every 2 minutes
-    setInterval(updatePrices, 120000);
+    setInterval(updatePrices, 300000);
 </script>
 </head>
 <body>
@@ -115,51 +119,26 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="3"><strong>Total Current Value</strong></td>
-                <td id="total-current-value">-</td>
+                <th colspan="3">Total Gross Value</th>
+                <th id="total-current-value">{{ client.total_value|round(2) }}</th>
             </tr>
             <tr>
-                <td colspan="3"><strong>Total Invested (AED)</strong></td>
-                <td>{{ client.amount_invested_aed }}</td>
+                <th colspan="3">Commission ({{ client.commission_percentage }}%)</th>
+                <th id="commission-amount">{{ client.commission_amount|round(2) }}</th>
             </tr>
             <tr>
-                <td colspan="3"><strong>Total Invested (USD)</strong></td>
-                <td>{{ client.converted_to_usd }}</td>
-            </tr>
-            <tr>
-                <td colspan="2" rowspan="4"><strong>Commission</strong></td>
-                <!--<td>{{ client.commission_percentage}}-->
-            </tr>
-            <tr>
-                <td colspan="1"><strong>%</strong></td>
-                <td>000</td>
-            </tr>
-            <tr>
-                <td colspan="1"><strong>AED</strong></td>
-                <td>001</td>
-            </tr>
-            <tr>
-                <td colspan="1"><strong>USD</strong></td>
-                <td>010</td>
-            </tr>
-            <tr>
-                <td colspan="2" rowspan="3"><strong>Payout</strong></td>
-            </tr>
-            <tr>
-                <td colspan="1"><strong>AED</strong></td>
-                <td>001</td>
-            </tr>
-            <tr>
-                <td colspan="1"><strong>USD</strong></td>
-                <td>010</td>
+                <th colspan="3">Total Net Value</th>
+                <th id="net-value">{{ client.net_value|round(2) }}</th>
             </tr>
         </tfoot>
     </table>
     <div>
-        <h2>Investment Performance</h2>
-        <p>Total Invested (AED): {{ client.amount_invested_aed | round(2) }}</p>
-        <p>Total Current Value (AED): <span id="total-current-value-aed">{{ client.total_value | round(2) }}</span></p>
-        <p id="profit-loss"></p>
+        <h3>Investment Summary</h3>
+        <p>Initial Investment (AED): {{ client.amount_invested_aed|round(2) }}</p>
+        <p>Total Gross Value (AED): {{ client.total_value|round(2) }}</p>
+        <p>Commission ({{ client.commission_percentage }}%): {{ client.commission_amount|round(2) }}</p>
+        <p>Total Net Value (AED): {{ client.net_value|round(2) }}</p>
     </div>
+    
 </body>
 </html>
