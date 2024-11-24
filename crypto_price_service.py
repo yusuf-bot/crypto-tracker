@@ -14,11 +14,11 @@ class CryptoPriceService:
         
         # Mapping of tokens to their symbols used in CoinStats
         self.token_map = {
-            'rndr': 'render',
+            'rndr': 'render-token',
             'bst': 'blocksquare',
             'ybr': 'yieldbricks',
-            'rio': 'realio',
-            'props': 'props',
+            'rio': 'realio-network',
+            'props': 'propbase',
         }
         
         self.headers = {"accept": "application/json",
@@ -40,14 +40,14 @@ class CryptoPriceService:
 
         try:
             response = requests.get(
-                f"https://openapiv1.coinstats.app/coins//{token_symbol}",
+                f"https://openapiv1.coinstats.app/coins/{token_symbol}",
                 headers=self.headers
             )
             response.raise_for_status()
 
             data = response.json()
             # CoinStats returns prices under 'price' key
-            price = data.get("coin", {}).get("price", 0.0)
+            price = data.get("price", 0.0)
 
             logging.info(f"Price for {token_name}: {price}")
             return float(price)
@@ -69,11 +69,11 @@ class CryptoComparePriceService:
         self.api_key =  os.getenv("CRYPTOCOMPARE_API_KEY")
         # Mapping of tokens to their CryptoCompare symbols
         self.token_map = {
-            'rndr': 'RNDR',
-            'bst': 'BST',
-            'ybr': 'YBR',
-            'rio': 'RIO',
-            'props': 'PROPS',
+            'rndr': 'render-token',
+            'bst': 'blocksquare',
+            'ybr': 'yieldbricks',
+            'rio': 'realio-network',
+            'props': 'propbase',
         }
         
         self.base_url = "https://min-api.cryptocompare.com/data/price"
