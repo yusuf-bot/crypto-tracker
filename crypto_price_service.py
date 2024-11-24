@@ -102,7 +102,7 @@ class CryptoComparePriceService:
             response.raise_for_status()
             
             data = response.json()
-            price = data.get('USD', 0.0)
+            price = data.get('price', 0.0)
             
             logging.info(f"Price for {token_name} ({token_symbol}): {price}")
             return float(price)
