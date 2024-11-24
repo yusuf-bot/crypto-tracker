@@ -3,50 +3,54 @@ import logging
 from dotenv import load_dotenv
 import os
 load_dotenv()
+import os
+import requests
+import logging
+
 class CryptoPriceService:
     def __init__(self):
-        # Mapping of tokens to their CoinGecko IDs
-        self.api_key=os.getenv("COINGECKO_API_KEY")
+        # API Key for CoinStats
+        self.api_key = os.getenv("COINSTATS_API_KEY")
+        
+        # Mapping of tokens to their symbols used in CoinStats
         self.token_map = {
-            'rndr': 'render-token',
+            'rndr': 'render',
             'bst': 'blocksquare',
             'ybr': 'yieldbricks',
-            'rio': 'realio-network',
-            'props': 'propbase',
+            'rio': 'realio',
+            'props': 'props',
         }
         
         self.headers = {
-            'Authorization': f'Apikey {self.api_key}',
+            'Authorization': f'Bearer {self.api_key}',
             'Accept': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
         }
 
     def get_current_price(self, token_name: str) -> float:
         """
-        Fetch current price from CoinGecko API.
+        Fetch current price from CoinStats API.
         Args:
             token_name (str): Internal token name (e.g., rndr, bst).
         Returns:
             float: Current price of the token or 0.0 if not found.
         """
-
-
-        token_id = self.token_map.get(token_name)
-        if not token_id:
+        token_symbol = self.token_map.get(token_name)
+        if not token_symbol:
             logging.error(f"Token {token_name} not found in token map.")
             return 0.0
 
         try:
             response = requests.get(
-                "https://api.coingecko.com/api/v3/simple/price",
-                params={"ids": token_id, "vs_currencies": "usd"},
+                f"https://api.coinstats.app/public/v1/coins/{token_symbol}",
                 headers=self.headers
             )
             response.raise_for_status()
-            
+
             data = response.json()
-            price = data.get(token_id, {}).get('usd', 0.0)
-            
+            # CoinStats returns prices under 'price' key
+            price = data.get("coin", {}).get("price", 0.0)
+
             logging.info(f"Price for {token_name}: {price}")
             return float(price)
 
@@ -56,7 +60,6 @@ class CryptoPriceService:
         except Exception as e:
             logging.error(f"Unexpected error for {token_name}: {e}")
             return 0.0
-
 
 class CryptoComparePriceService:
     def __init__(self):
