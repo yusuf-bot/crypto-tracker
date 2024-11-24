@@ -181,6 +181,24 @@
         .logout-button:hover {
             background-color: #c82333; /* Darker red on hover */
         }
+        .client-name:hover .delete-button {
+    display: inline-block; /* Show the delete button on hover */
+}
+
+        .delete-button {
+            background-color: #dc3545; /* Red background */
+            color: white; /* White text */
+            border: none; /* No border */
+            border-radius: 5px; /* Rounded corners */
+            padding: 5px 10px; /* Padding */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s; /* Transition for hover effect */
+            display: none; /* Ensure it's hidden by default */
+        }
+
+        .delete-button:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
     </style>
 <script>
     // Function to update prices
@@ -237,6 +255,33 @@
         }
     }
 </script>
+<script>
+    function removeClient(clientName) {
+        if (confirm("Are you sure you want to remove this client?")) {
+            fetch(`/remove_client/${encodeURIComponent(clientName)}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove the row from the table
+                    const row = document.querySelector(`tr[data-client-name="${clientName}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    alert('Client removed successfully');
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to remove client');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+        }
+    }
+    </script>
 </head>
 <body>
 
@@ -260,7 +305,12 @@
         <tbody>
             {% for client in clients %}
             <tr data-client-name="{{ client.name }}">
-                <td>{{ client.name }}</td>
+                <td>
+                    <span class="client-name" style="position: relative; display: inline-block;">
+                        {{ client.name }}
+                        <button class="delete-button" onclick="removeClient('{{ client.name }}')" >Delete</button>
+                    </span>
+                </td>
                 <td>{{ client.tokens_held_rndr }}</td>
                 <td>{{ client.tokens_held_props }}</td>
                 <td>{{ client.tokens_held_bst }}</td>

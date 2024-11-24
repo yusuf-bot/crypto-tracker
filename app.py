@@ -177,33 +177,7 @@ def add_client():
     # If it's a GET request, redirect to admin dashboard
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/remove_client/<int:client_id>', methods=['DELETE'])
-@login_required
-def remove_client(client_id):
-    # Check if user is admin
-    if current_user.role != 'admin':
-        return jsonify({'message': 'Unauthorized access'}), 403
 
-    try:
-        # Find and delete the client
-        client = Client.query.get_or_404(client_id)
-        
-        # Also find and delete the associated user
-        user = User.query.filter_by(name=client.name).first()
-        
-        if user:
-            db.session.delete(user)
-        
-        db.session.delete(client)
-        db.session.commit()
-        
-        return jsonify({'message': 'Client removed successfully'}), 200
-    
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'message': str(e)}), 400
-
-# Regular login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -233,6 +207,32 @@ def handle_error(error):
         return redirect(url_for('login'))
     raise error
 
+@app.route('/remove_client/<string:client_name>', methods=['DELETE'])
+@login_required
+def remove_client(client_name):
+    # Check if user is admin
+    if current_user.role != 'admin':
+        return jsonify({'message': 'Unauthorized access'}), 403
+
+    try:
+        # Find and delete the client
+        client = Client.query.filter_by(name=client_name).first_or_404()
+        
+        # Also find and delete the associated user
+        user = User.query.filter_by(name=client.name).first()
+        
+        if user:
+            db.session.delete(user)
+        
+        db.session.delete(client)
+        db.session.commit()
+        
+        return jsonify({'message': 'Client removed successfully'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+    
 
 # Admin dashboard
 @app.route('/admin/dashboard')
