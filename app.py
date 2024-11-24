@@ -200,12 +200,19 @@ def login():
         return redirect(url_for('login'))
 
 # Error handler for OAuth errors
+
+
+@app.route('/robots.txt')
+def robots():
+    return "User -agent: *\nDisallow: /", 200, {'Content-Type': 'text/plain'}
+
+# Error handler for general exceptions
 @app.errorhandler(Exception)
 def handle_error(error):
-    if isinstance(error, OAuth2Error):
-        flash('Failed to authenticate with Google.', 'error')
-        return redirect(url_for('login'))
-    raise error
+    # Log the error or handle it as needed
+    app.logger.error(f"An error occurred: {error}")
+    return jsonify({"error": "An internal error occurred."}), 500
+
 
 @app.route('/remove_client/<string:client_name>', methods=['DELETE'])
 @login_required
