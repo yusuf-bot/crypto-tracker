@@ -6,10 +6,39 @@
     <title>Admin Dashboard</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <style>
-        table { width: 100%; border-collapse: collapse; margin: 20px auto; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background: #007BFF; color: white; }
-        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #222222; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            padding: 20px;
+        }
+        table { 
+            margin: 20px auto; 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: #2c2c2c; /* Darker table background */
+            border-radius: 10px; /* Rounded corners for the table */
+            overflow: hidden; /* Ensures the border-radius works */
+            box-shadow: 0 4px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+            border: 1px solid white; /* White border for separation */
+    }
+    th, td { 
+        padding: 15px; 
+        text-align: left; 
+        border-bottom: 1px solid #444; /* Divider line for rows */
+    }
+    th { 
+        background: #3a3a3a; /* Darker header background */
+        color: #ffffff; /* White text for header */
+        border-bottom: 2px solid #007BFF; /* Blue bottom border for header */
+    }
+    tr:nth-child(even) { 
+        background: #2a2a2a; /* Darker row for even rows */
+    }
+    tr:hover { 
+        background: #444; /* Highlight on hover */
+    }
         .modal {
             display: none; /* Hidden by default */
             position: fixed; /* Stay in place */
@@ -19,28 +48,138 @@
             width: 100%; /* Full width */
             height: 100%; /* Full height */
             overflow: auto; /* Enable scroll if needed */
-            background-color: rgb(0,0,0); /* Fallback color */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            background-color: rgba(0, 0, 0, 0.8); /* Black with opacity */
             padding-top: 60px;
         }
+    
         .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto; /* 15% from the top and centered */
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%; /* Could be more or less, depending on screen size */
+            background-color: #2c2c2c; /* Dark background for modal */
+            border: 1px solid #ffffff; /* Blue border */
+            border-radius: 10px; /* Rounded corners */
+            color:#e0e0e0;
+            padding: 20px; /* Padding */
+            width: 90%; /* Width of the modal */
+            max-width: 500px; /* Max width */
+            max-height: 80%; /* Set a max height for the modal */
+            overflow-y: auto; /* Enable vertical scroll if content exceeds max-height */
+            margin: auto; /* Center the modal */
         }
+            
+        .modal-content::-webkit-scrollbar {
+            display: none; /* Safari and Chrome */
+        }
+
+        .modal-content {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        .add-client-button {
+            background-color: #28a745; /* Green background */
+            color: white; /* White text */
+            border: none; /* No border */
+            padding: 10px 20px; /* Padding */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            font-size: 16px; /* Font size */
+            transition: background-color 0.3s; /* Transition for hover effect */
+        }
+    
+        .add-client-button:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+        .form-group {
+            display: flex; /* Use flexbox for alignment */
+            justify-content: flex-end; /* Align items to the right */
+            margin-bottom: 15px; /* Space between form fields */
+        }
+        .inline-edit-input {
+        width: 100%; /* Full width */
+        box-sizing: border-box; /* Include padding in width */
+        border: 1px solid #007BFF; /* Blue border */
+        border-radius: 4px; /* Rounded corners */
+        padding: 5px; /* Padding for input */
+        color: #ffffff; /* Light text color for dark mode */
+        background-color: #444; /* Dark background for input */
+        transition: border-color 0.3s; /* Smooth border color transition */
+    }
+
+    .inline-edit-input:focus {
+        border-color: #0056b3; /* Darker blue on focus */
+        outline: none; /* Remove default outline */
+    }
+
+
+        .form-group label {
+            margin-right: 10px; /* Space between label and input */
+            color: #e0e0e0; 
+            text-align: right;/* Light color for labels */
+        }
+
+        .form-group input {
+            width: 100%; /* Full width of the input */
+            max-width: 300px; /* Optional: set a max width for the input */
+            padding: 10px; /* Padding inside the input */
+            border-radius: 4px; /* Rounded corners */
+            border: 1px solid #666; /* Border color */
+            background-color: #444; /* Dark background for input */
+            color: #e0e0e0; /* Light text color */ /* Right align the text inside the input */
+        }
+    
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 2px 1px #007BFF; /* Blue outline on focus */
+        }
+    
+        .submit-btn {
+            flex: 1; /* Allow buttons to grow and take available space */
+            padding: 0.5rem; /* Adjust padding for consistent height */
+            background: #007BFF; /* Primary color */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem; /* Keep the font size for readability */
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 0 5px; /* Add horizontal margin for spacing */
+        }
+
+        .submit-btn.cancel {
+            background-color: #dc3545; /* Red background for cancel */
+        }
+
+        .submit-btn:hover {
+            background: #0056b3; /* Darker blue on hover */
+        }
+
+        .submit-btn.cancel:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
+                    
         .close {
             color: #aaa;
             float: right;
             font-size: 28px;
             font-weight: bold;
         }
+    
         .close:hover,
         .close:focus {
-            color: black;
+            color: white; /* Change close button color on hover */
             text-decoration: none;
             cursor: pointer;
+        }
+        .logout-button {
+            background-color: #dc3545; /* Red background */
+            color: white; /* White text */
+            padding: 10px 20px; /* Padding */
+            border-radius: 5px; /* Rounded corners */
+            text-decoration: none; /* Remove underline */
+            transition: background-color 0.3s; 
+         /* Transition for hover effect */
+        }
+
+        .logout-button:hover {
+            background-color: #c82333; /* Darker red on hover */
         }
     </style>
 <script>
@@ -100,7 +239,11 @@
 </script>
 </head>
 <body>
-    <h1>Admin Dashboard</h1>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Admin Dashboard</h1>
+        <a href="{{ url_for('login') }}" class="logout-button">Logout</a>
+    </div>
     <table>
         <thead>
             <tr>
@@ -143,74 +286,71 @@
                 <td id="current-value-bst">${{ (current_prices['bst'] ) | round(2) }}</td>
                 <td id="current-value-rio">${{ (current_prices['rio'] ) | round(2) }}</td>
                 <td id="current-value-ybr">${{ (current_prices['ybr'] ) | round(2) }}</td>
-                <td id="total-predicted"><strong>Total Predicted</strong></td>
+
                 <td colspan="2"></td>
             </tr>
             <tr>
                 <td><strong>Price Prediction</strong></td>
-                <td>$10.00</td> <!-- Dummy value for Rndr -->
-                <td>$7.00</td>  <!-- Dummy value for Props -->
-                <td>$5.00</td>  <!-- Dummy value for Bst -->
-                <td>$3.00</td>  <!-- Dummy value for Rio -->
-                <td>$2.00</td>  <!-- Dummy value for Ybr -->
-                <!-- <td> sum of all the predicted </td>-->
-                <td>$28.0<//** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: 'selector',
-  // ...
-}td>
+                <td id="predicted-price-rndr" onclick="editPrice('predicted-price-rndr',0)">-</td> <!-- Example value -->
+                <td id="predicted-price-props" onclick="editPrice('predicted-price-props',0)">-</td>
+                <td id="predicted-price-bst" onclick="editPrice('predicted-price-bst',0)">-</td>
+                <td id="predicted-price-rio" onclick="editPrice('predicted-price-rio', 0)">-</td>
+                <td id="predicted-price-ybr" onclick="editPrice('predicted-price-ybr', 0)">-</td>
                 <td colspan="2"></td>
             </tr>
 
         </tbody>
     </table>
-    <button onclick="openModal()">Add New Client</button>
-   <!-- Modal for Adding New Client -->
-<!-- Modal for Adding New Client -->
+    <button onclick="openModal()" class="add-client-button">Add New Client</button>
+  <!-- Modal for Adding New Client -->
 <div id="myModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h2>Add New Client</h2>
+        <h2 style="text-align: center; ">Add New Client</h2>
         <form id="addClientForm" method="POST" action="{{ url_for('add_client') }}">
-            <div>
+            <div class="form-group">
                 <label for="name">Client Name:</label>
-                <input type="text" id="name" name="name" required>
+                <input type="text" id="name" name="name" required placeholder="Enter client name" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" required placeholder="Enter client email" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required placeholder="Enter client password" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="amount_invested_aed">Amount Invested (AED):</label>
-                <input type="number" id="amount_invested_aed" name="amount_invested_aed" step="0.01" required oninput="updateAmountInvestedUSD()">
+                <input type="number" id="amount_invested_aed" name="amount_invested_aed" step="0.01" required placeholder="Enter amount in AED" oninput="updateAmountInvestedUSD()" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="tokens_rndr">Tokens Held (Rndr):</label>
-                <input type="number" id="tokens_rndr" name="tokens_rndr" step="0.01" required>
+                <input type="number" id="tokens_rndr" name="tokens_rndr" step="0.01" required placeholder="Enter tokens held (Rndr)" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="tokens_props">Tokens Held (Props):</label>
-                <input type="number" id="tokens_props" name="tokens_props" step="0.01" required>
+                <input type="number" id="tokens_props" name="tokens_props" step="0.01" required placeholder="Enter tokens held (Props)" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="tokens_bst">Tokens Held (Bst):</label>
-                <input type="number" id="tokens_bst" name="tokens_bst" step="0.01" required>
+                <input type="number" id="tokens_bst" name="tokens_bst" step="0.01" required placeholder="Enter tokens held (Bst)" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="tokens_rio">Tokens Held (Rio):</label>
-                <input type="number" id="tokens_rio" name="tokens_rio" step="0.01" required>
+                <input type="number" id="tokens_rio" name="tokens_rio" step="0.01" required placeholder="Enter tokens held (Rio)" style="text-align: right;">
             </div>
-            <div>
+            <div class="form-group">
                 <label for="tokens_ybr">Tokens Held (Ybr):</label>
-                <input type="number" id="tokens_ybr" name="tokens_ybr" step="0.01" required>
+                <input type="number" id="tokens_ybr" name="tokens_ybr" step="0.01" required placeholder="Enter tokens held (Ybr)" style="text-align: right;">
             </div>
-            <div>
-                <button type="submit">Add Client</button>
-                <button type="button" onclick="closeModal()">Cancel</button>
+            <div class="form-group">
+                <label for="commission">Commission (%):</label>
+                <input type="number" id="commission" name="commission" min="1" max="100" required placeholder="Enter commission percentage" style="text-align: right;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="submit-btn cancel" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="submit-btn">Add Client</button>
             </div>
         </form>
     </div>
@@ -224,6 +364,56 @@ module.exports = {
         document.getElementById('amount_invested_usd').value = amountInvestedUSD;
     }
 </script>
+<script>
+    function editPrice(cellId, defaultValue) {
+        const cell = document.getElementById(cellId);
+        const currentPrice = localStorage.getItem(cellId) || (cell.textContent === '-' ? '' : cell.textContent); // Load from localStorage or use current content
+    
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentPrice || defaultValue; // Show last entered value or default value
+        input.className = 'inline-edit-input'; // Apply the CSS class
+    
+        // Event listener for when the input loses focus
+        input.onblur = function() {
+            saveValue(cell, input.value, cellId);
+        };
+    
+        // Event listener for pressing Enter
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                saveValue(cell, input.value, cellId);
+            }
+        });
+    
+        cell.textContent = ''; // Clear the cell content
+        cell.appendChild(input); // Add the input element to the cell
+        input.focus(); // Focus on the input field
+        cell.onclick = null; // Disable clicking on the cell while editing
+    }
+    
+    // Function to save value and update cell
+    function saveValue(cell, value, cellId) {
+        const newValue = value.trim(); // Trim whitespace
+        localStorage.setItem(cellId, newValue); // Store the new value in localStorage
+        cell.textContent = newValue || '-'; // Update cell with new value or revert to hyphen if empty
+        cell.onclick = function() { editPrice(cellId, newValue); }; // Re-enable editing
+    }
+    
+    // Load stored values on page load
+    window.onload = function() {
+        const tokens = ['predicted-price-rndr', 'predicted-price-props', 'predicted-price-bst', 'predicted-price-rio', 'predicted-price-ybr'];
+        tokens.forEach(token => {
+            const cell = document.getElementById(token);
+            const storedValue = localStorage.getItem(token);
+            if (storedValue) {
+                cell.textContent = storedValue; // Set the stored value if it exists
+            } else {
+                cell.textContent = '-'; // Default to hyphen if no value is stored
+            }
+        });
+    }
+    </script>
 <script>
     // Enhanced modal and client management script
     function openModal() {

@@ -105,7 +105,7 @@ class Client(db.Model):
     price_prediction = db.Column(db.Float, nullable=False)
     
     # New commission-related fields
-    commission_percentage = db.Column(db.Float, nullable=False, default=10.0)  # Default 10%
+    commission_percentage = db.Column(db.Float, nullable=False)  # Default 10%
     commission_type = db.Column(db.String(50), nullable=False, default='percentage')  # or 'fixed'
 
 
@@ -160,7 +160,8 @@ def add_client():
                 tokens_held_bst=float(request.form.get('tokens_bst')),
                 tokens_held_rio=float(request.form.get('tokens_rio')),
                 tokens_held_ybr=float(request.form.get('tokens_ybr')),
-                price_prediction=0.0  # You might want to add this to the form or set a default
+                price_prediction=0.0,
+                commision_percentage=float(request.form.get('commission')) # You might want to add this to the form or set a default
             )
             db.session.add(new_client)
             db.session.commit()

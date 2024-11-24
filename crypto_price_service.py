@@ -114,4 +114,4 @@ class CryptoComparePriceService:
             logging.error(f"Unexpected error for {token_name}: {e}")
             return 0.0
 # Initialize the service
-price_service = CryptoPriceService()
+price_service = CryptoComparePriceService()

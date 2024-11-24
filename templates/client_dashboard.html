@@ -6,11 +6,75 @@
     <title>Client Dashboard</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
-        table { margin: 20px auto; width: 80%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 10px; }
-        th { background: #007BFF; color: white; }
-    </style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #181818; /* Slightly lighter dark background */
+            color: #ffffff; /* Light text color */
+            text-align: center; 
+            padding: 20px; 
+        }
+        table { 
+            margin: 20px auto; 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: #2c2c2c; /* Darker table background */
+            border-radius: 10px; /* Rounded corners for the table */
+            overflow: hidden; /* Ensures the border-radius works */
+            box-shadow: 0 4px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+            border: 1px solid white; /* White border for separation */
+    }
+    th, td { 
+        padding: 15px; 
+        text-align: left; 
+        border-bottom: 1px solid #444; /* Divider line for rows */
+    }
+    th { 
+        background: #3a3a3a; /* Darker header background */
+        color: #ffffff; /* White text for header */
+        border-bottom: 2px solid #007BFF; /* Blue bottom border for header */
+    }
+    tr:nth-child(even) { 
+        background: #2a2a2a; /* Darker row for even rows */
+    }
+    tr:hover { 
+        background: #444; /* Highlight on hover */
+    }
+    tfoot th {
+        background: #3a3a3a; /* Darker footer header color */
+        color: #ffffff; 
+       ; /* Blue top border for footer */
+    }
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #444; /* Divider line */
+        margin: 5px 0; /* Margin between items */
+    }
+    .summary-item:last-child {
+        border-bottom: none; /* No border on the last item */
+    }
+    #profit-loss {
+        font-weight: bold; /* Bold text for profit/loss */
+    }
+    #profit-loss-value {
+        color: green; /* Default color for profit */
+    }
+    .logout-button {
+        background-color: #dc3545; /* Red background */
+        color: white; /* White text */
+        padding: 10px 20px; /* Padding */
+        border-radius: 5px; /* Rounded corners */
+        text-decoration: none; /* Remove underline */
+        transition: background-color 0.3s; 
+        /* Transition for hover effect */
+    }
+
+    .logout-button:hover {
+        background-color: #c82333; /* Darker red on hover */
+    }
+</style>
 <script>
     function updatePrices() {
         fetch('/api/prices/update')
@@ -42,13 +106,12 @@
                 // Get commission percentage
                 const commissionPercentage = parseFloat("{{ client.commission_percentage }}");
                 const investedAmount = parseFloat("{{ client.amount_invested_aed }}");
+                const netValue = parseFloat("{{ client.net_value }}");
+                const profitLoss = netValue - investedAmount;
 
                 // Calculate commission and net value
                 const commissionAmount = (totalValue * (commissionPercentage / 100)).toFixed(2);
-                const netValue = (totalValue - commissionAmount).toFixed(2);
-
-                // Calculate profit/loss
-                const profitLoss = totalValue - investedAmount;
+ 
                 const profitLossPercentage = (profitLoss / investedAmount) * 100;
 
                 // Update total value elements
@@ -57,11 +120,11 @@
                 document.querySelector('#net-value').textContent = netValue;
 
                 // Update profit/loss display
-                const profitLossElement = document.querySelector('#profit-loss');
+                const profitLossElement = document.querySelector('#profit-loss-value');
                 if (profitLoss >= 0) {
-                    profitLossElement.innerHTML = `Profit/Loss: <span style="color: green;">+${profitLoss.toFixed(2)} AED (+${profitLossPercentage.toFixed(2)}%)</span>`;
+                    profitLossElement.innerHTML = `<span style="color: green;">+${profitLoss.toFixed(2)} AED</span>`;
                 } else {
-                    profitLossElement.innerHTML = `Profit/Loss: <span style="color: red;">-${(-profitLoss).toFixed(2)} AED (${profitLossPercentage.toFixed(2)}%)</span>`;
+                    profitLossElement.innerHTML = `<span style="color: red;">-${(-profitLoss).toFixed(2)} AED</span>`;
                 }
             })
             .catch(error => console.error('Error fetching prices:', error));
@@ -75,71 +138,98 @@
 </script>
 </head>
 <body>
-    <h1>Welcome, {{ client.name }}</h1>
-    <h2>Amount Invested: {{ client.amount_invested_aed }}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Token</th>
-                <th>Tokens Held</th>
-                <th>Current Price</th>
-                <th>Current Investment Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Render (RNDR)</td>
-                <td id="tokens-held-rndr">{{ client.tokens_held_rndr }}</td>
-                <td id="current-price-rndr">-</td>
-                <td id="current-inv-rndr">-</td>
-            </tr>
-            <tr>
-                <td>Propbase (PROPS)</td>
-                <td id="tokens-held-props">{{ client.tokens_held_props }}</td>
-                <td id="current-price-props">-</td>
-                <td id="current-inv-props">-</td>
-            </tr>
-            <tr>
-                <td>Blocksquare (BST)</td>
-                <td id="tokens-held-bst">{{ client.tokens_held_bst }}</td>
-                <td id="current-price-bst">-</td>
-                <td id="current-inv-bst">-</td>
-            </tr>
-            <tr>
-                <td>Realio (RIO)</td>
-                <td id="tokens-held-rio">{{ client.tokens_held_rio }}</td>
-                <td id="current-price-rio">-</td>
-                <td id="current-inv-rio">-</td>
-            </tr>
-            <tr>
-                <td>YieldBricks (YBR)</td>
-                <td id="tokens-held-ybr">{{ client.tokens_held_ybr }}</td>
-                <td id="current-price-ybr">-</td>
-                <td id="current-inv-ybr">-</td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr>
-                <th colspan="3">Total Gross Value</th>
-                <th id="total-current-value">{{ client.total_value|round(2) }}</th>
-            </tr>
-            <tr>
-                <th colspan="3">Commission ({{ client.commission_percentage }}%)</th>
-                <th id="commission-amount">{{ client.commission_amount|round(2) }}</th>
-            </tr>
-            <tr>
-                <th colspan="3">Total Net Value</th>
-                <th id="net-value">{{ client.net_value|round(2) }}</th>
-            </tr>
-        </tfoot>
-    </table>
-    <div>
-        <h3>Investment Summary</h3>
-        <p>Initial Investment (AED): {{ client.amount_invested_aed|round(2) }}</p>
-        <p>Total Gross Value (AED): {{ client.total_value|round(2) }}</p>
-        <p>Commission ({{ client.commission_percentage }}%): {{ client.commission_amount|round(2) }}</p>
-        <p>Total Net Value (AED): {{ client.net_value|round(2) }}</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Welcome, {{client.name}}</h1>
+        <a href="{{ url_for('login') }}" class="logout-button">Logout</a>
     </div>
+    <div style="display: flex; justify-content: space-between;">
+        <table style="flex: 1; margin-right: 20px;">
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Tokens Held</th>
+                    <th>Current Price</th>
+                    <th>Current Investment Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Render (RNDR)</td>
+                    <td id="tokens-held-rndr">{{ client.tokens_held_rndr }}</td>
+                    <td id="current-price-rndr">-</td>
+                    <td id="current-inv-rndr">-</td>
+                </tr>
+                <tr>
+                    <td>Propbase (PROPS)</td>
+                    <td id="tokens-held-props">{{ client.tokens_held_props }}</td>
+                    <td id="current-price-props">-</td>
+                    <td id="current-inv-props">-</td>
+                </tr>
+                <tr>
+                    <td>Blocksquare (BST)</td>
+                    <td id="tokens-held-bst">{{ client.tokens_held_bst }}</td>
+                    <td id="current-price-bst">-</td>
+                    <td id="current-inv-bst">-</td>
+                </tr>
+                <tr>
+                    <td>Realio (RIO)</td>
+                    <td id="tokens-held-rio">{{ client.tokens_held_rio }}</td>
+                    <td id="current-price-rio">-</td>
+                    <td id="current-inv-rio">-</td>
+                </tr>
+                <tr>
+                    <td>YieldBricks (YBR)</td>
+                    <td id="tokens-held-ybr">{{ client.tokens_held_ybr }}</td>
+                    <td id="current-price-ybr">-</td>
+                    <td id="current-inv-ybr">-</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3">Total Gross Value</th>
+                    <th id="total-current-value">{{ client.total_value|round(2) }}</th>
+                </tr>
+                <tr>
+                    <th colspan="3">Commission ({{ client.commission_percentage }}%)</th>
+                    <th id="commission-amount">{{ client.commission_amount|round(2) }}</th>
+                </tr>
+                <tr>
+                    <th colspan="3">Total Net Value</th>
+                    <th id="net-value">{{ client.net_value|round(2) }}</th>
+                </tr>
+            </tfoot>
+        </table>
     
+        <table style="flex: 1; border: 1px solid white; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Investment Summary</th>
+                    <th>Amount (AED)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Initial Investment</td>
+                    <td>{{ client.amount_invested_aed|round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Total Gross Value</td>
+                    <td>{{ client.total_value|round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Commission ({{ client.commission_percentage }}%)</td>
+                    <td>{{ client.commission_amount|round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Total Net Value</td>
+                    <td id="net-value">{{ client.net_value|round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Profit/Loss</td>
+                    <td id="profit-loss-value"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
