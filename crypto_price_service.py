@@ -21,11 +21,9 @@ class CryptoPriceService:
             'props': 'props',
         }
         
-        self.headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-        }
+        self.headers = {"accept": "application/json",
+                        "X-API-KEY": self.api_key}
+
 
     def get_current_price(self, token_name: str) -> float:
         """
@@ -42,7 +40,7 @@ class CryptoPriceService:
 
         try:
             response = requests.get(
-                f"https://api.coinstats.app/public/v1/coins/{token_symbol}",
+                f"https://openapiv1.coinstats.app/coins//{token_symbol}",
                 headers=self.headers
             )
             response.raise_for_status()
@@ -79,11 +77,8 @@ class CryptoComparePriceService:
         }
         
         self.base_url = "https://min-api.cryptocompare.com/data/price"
-        self.headers = {
-            'Authorization': f'Apikey {self.api_key}',
-            'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-        }
+        self.headers = {"accept": "application/json",
+                    "X-API-KEY": "C42yBtNcADD21l7dcxJaUiEAbGblxL0B7Naugp5rEBM="}
 
     def get_current_price(self, token_name: str) -> float:
         """
